@@ -1,0 +1,7 @@
+---
+author: "Piotr Patrzylas"
+output: html_document
+---
+```{r, eval=TRUE, echo=TRUE}
+dataset = read.csv("Live.csv")
+```
