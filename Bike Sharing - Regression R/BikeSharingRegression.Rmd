@@ -102,34 +102,29 @@ print("However, humidity and windspeed have no obvious effect on the count.")
 
 ```
 
-  
+
 
 =========================================
-2. Linear Regression models
+2. Simple Linear Regression models
 =========================================  
 
 ```{r, eval=TRUE, echo=TRUE}
-model <- lm(cnt ~ mnth+weekday+weathersit+temp, data = Bike1)
+plot(Bike1$cnt, Bike1$temp) # Seems to be a positive linear relationship
+model <- lm(cnt ~ temp, data = Bike1)
 summary(model)
+# Temp p-value very low, so it is statistically siginificant.
+# B0 = 1214 and B1 is 6640. This can be translated that every 
+# RSE 1509 which means prediction on the response (count) based on the temperature would be off by about 1509.
+# Relatively low R squared value, only 39% of the sample variation in the response is explained by the temperature.
 ```
-  
-  The most interesting predictors for this data are:  
   
   
 =========================================
-3. Prediction
+4. Multiple Linear Regression
 =========================================  
 
 ```{r, eval=TRUE, echo=TRUE}
-
+model2 <- lm(cnt ~ dteday+season+weathersit+temp+hum+windspeed, data = Bike1)
+summary(model2)
 ```
-=========================================
-4. Inference
-=========================================  
 
-```{r, eval=TRUE, echo=TRUE}
-
-```
-=========================================
-5. Final thoughts
-=========================================  
