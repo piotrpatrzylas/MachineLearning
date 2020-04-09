@@ -1,0 +1,119 @@
+---
+title: "Caesarian Section Classification Dataset Data Set"
+author: "Piotr Patrzylas"
+output: html_document
+---
+
+1. Data pre-processing:  
+```{r}
+
+df = read.csv("caesarian.csv.arff", skip = 15, header = FALSE)
+colnames(df) <- c("Age", "DeliveryNumber", "DeliveryTime", "BloodPressure", "HeartProblem", "Caesarian")
+df$DeliveryNumber <- as.factor(df$DeliveryNumber)
+df$DeliveryTime <- as.factor(df$DeliveryTime)
+df$BloodPressure <- as.factor(df$BloodPressure)
+df$HeartProblem <- as.factor(df$HeartProblem)
+df$Caesarian <- as.factor(df$Caesarian)
+summary(df)
+str(df)
+```
+  
+Attribute information:  
+Age - number of years (integers)
+Delivery number - number of prior deliveries (integers)
+Delivery time - 0 = timely, 1 = premature, 2 = late (factor)
+Blood Pressure - 0 = low, 1 = normal, 2 = high (factor)
+Heart problem - 0 = apt, 1 = inept (factor)
+Caesarian - 0 = no, 1 = yes (factor)
+
+
+2. EDA
+```{r}
+library(ggplot2)
+par(mfrow=c(2,3))
+for (i in 1:dim(df)[2]) {
+  hist(as.integer(df[,i]), main = paste(names(df[i]), "histogram"), col = "blue")
+}
+c_cut <- df$Caesarian
+for (i in 1:5) {
+  pairs(df[, c(i, 6)], col=c("red", "blue")[c_cut], pch=c(4, 8)[c_cut])
+}
+```
+
+It seems that "Age" is normally distributed. Number of deliveries is, no surprise, right skewed. We can notice that "normal" delivery times and blood pressure dominate over their "unusual" counterparts.There is more people without heart problems. We have more data for females with Caesarian delivery.
+It seems that after 3rd delivery we have only Caesarian cut as a method of delivery.
+```{r}
+df[df$DeliveryNumber == 4, ]
+```
+Because there are only 2 cases when number of deliveries = 4 we can assume that missing above information is due to small sample size.
+
+3. Logistic Regression
+```{r}
+log.model <- glm(Caesarian ~., data = df, family = "binomial")
+summary(log.model)
+# Delivery time, Blood pressure and Heart problem are statistically significant.
+log.pred <- predict(log.model, type = "response")
+log.pred[log.pred < 0.5] <- 0
+log.pred[log.pred >= 0.5] <- 1
+table(log.pred, df$Caesarian)
+# Making prediction using our model we got 71% observations correctly classified.
+
+#LOOCV
+accuracy = NULL
+for (i in 1:nrow(df)) {
+  train <- df[-i, ]
+  test <- df[i, ]
+  log.model <- glm(Caesarian ~., data = train, family = "binomial")
+  log.pred <- predict(log.model, subset(test[, 1:5]), type = "response")
+  pred <- ifelse(log.pred > 0.5,1,0)
+  error <- mean(pred != test$Caesarian)
+  accuracy[i] <- 1-error
+}
+print(mean(accuracy))
+#Using LLOCV we get 61.25% accuracy of our model.
+
+#10 K-Fold
+
+kfold.model = glm(Caesarian ~., data = df, family = "binomial")
+kfold.cv = cv.glm(df, kfold.model, K = 10)
+print(1 - kfold.cv$delta[1])
+#Using 10 K-Fold CV we get 75.3% accuracy of our model. 
+
+```
+
+4. Decision Trees + Random Forest
+```{r}
+library(tree)
+tree.model <- tree::tree(Caesarian ~ Age+DeliveryNumber+DeliveryTime+BloodPressure+HeartProblem, df)
+summary(tree.model)
+plot(tree.model)
+text(tree.model, pretty=0)
+
+# Calculating model accuracy
+set.seed(700)
+train <- sample(1:nrow(df), nrow(df)/2)
+df.test <- df[-train,]
+df.response <- df$Caesarian[-train]
+df.train.tree <- tree(Caesarian ~ ., df, subset=train)
+plot(df.train.tree)
+text(df.train.tree,pretty=0)
+
+df.pred <- predict(df.train.tree, df.test, type="class")
+table(df.pred, df.response)
+print(1 - mean(df.pred!= df.response))
+
+# With decision tree accuracy is 65%.
+```
+
+5. SVM
+```{r}
+
+```
+
+6. Comparison of models
+```{r}
+
+```
+
+7. Final thoughts
+
