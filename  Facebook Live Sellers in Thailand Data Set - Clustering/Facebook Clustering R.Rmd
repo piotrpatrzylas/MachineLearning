@@ -2,6 +2,31 @@
 author: "Piotr Patrzylas"
 output: html_document
 ---
+
+1. Data pre-processing and feature selection  
 ```{r, eval=TRUE, echo=TRUE}
-dataset = read.csv("Live.csv")
+df = read.csv("Live.csv")
+# Let's check how number of comments corresponds to the number of likes
+df2 = df[, c(5,8)]
+plot(df2, title = "Number of comments")
+
+```
+  
+2. Clustering
+```{r, echo=FALSE}
+totwit <- rep(0, 10)
+for(i in 1:10){
+set.seed(700)
+totwit[i] <- kmeans(df2,i,nstart=100)$tot.withinss
+}
+plot(1:10, totwit, type="b", xlab="Number of Clusters",
+ylab="Within groups sum of squares",
+main="Assessing the Optimal Number of Clusters with the Elbow Method",
+pch=20, cex=2)
+# Using Elbow method it seems that best K value is about 3
+
+set.seed(70)
+k3 <- kmeans(df2,3,nstart=100)
+plot(df2, col = (k3$cluster +1),
+main="K-Means result with 3 clusters", pch=20, cex=2)
 ```
